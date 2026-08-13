@@ -30,8 +30,10 @@ jobs:
               touch database/database.sqlite
               php artisan key:generate --force
             else
-              echo "🔄 Actualizando repositorio existente..."
-              git pull origin main
+              echo "🔄 Limpiando cambios locales y sincronizando repositorio..."
+              git checkout -- . || true
+              git fetch origin main
+              git reset --hard origin/main
               mkdir -p database
               touch database/database.sqlite
             fi

@@ -3,16 +3,24 @@ set -e
 
 echo "🚀 Iniciando despliegue de Rentame API en Hostinger..."
 
-# 1. Crear directorio y archivo de base de datos SQLite ANTES de ejecutar composer
+# 1. Crear directorio y archivo de base de datos SQLite ANTES de nada
 if [ ! -f database/database.sqlite ]; then
     echo "🗄️ Creando archivo de base de datos SQLite..."
     mkdir -p database
     touch database/database.sqlite
 fi
 
-# 2. Traer últimos cambios de GitHub
-echo "📥 Descargando cambios de Git..."
-git pull origin main
+# 2. Descartar cualquier modificación local en el servidor y sincronizar con origin/main
+echo "📥 Sincronizando con los últimos cambios de GitHub..."
+git checkout -- . || true
+git fetch origin main
+git reset --hard origin/main
+
+# Re-verificar base de datos SQLite tras el reset
+if [ ! -f database/database.sqlite ]; then
+    mkdir -p database
+    touch database/database.sqlite
+fi
 
 # 3. Instalar dependencias de Composer
 echo "📦 Instalando dependencias de Composer..."
