@@ -22,7 +22,12 @@ class StoreRentalRequest extends FormRequest
                 Rule::exists('customers', 'id')->where('user_id', $userId),
             ],
             'asset_id' => [
-                'required',
+                'required_without:asset_ids',
+                'nullable',
+                Rule::exists('assets', 'id')->where('user_id', $userId),
+            ],
+            'asset_ids' => ['nullable', 'array'],
+            'asset_ids.*' => [
                 Rule::exists('assets', 'id')->where('user_id', $userId),
             ],
             'start_date' => ['required', 'date'],
@@ -45,7 +50,7 @@ class StoreRentalRequest extends FormRequest
         return [
             'customer_id.required' => 'Debes seleccionar un cliente.',
             'customer_id.exists' => 'El cliente seleccionado no existe o no te pertenece.',
-            'asset_id.required' => 'Debes seleccionar un activo para la renta.',
+            'asset_id.required_without' => 'Debes seleccionar al menos un activo para la renta.',
             'asset_id.exists' => 'El activo seleccionado no existe o no te pertenece.',
             'start_date.required' => 'La fecha de inicio de la renta es obligatoria.',
             'end_date.required' => 'La fecha de fin de la renta es obligatoria.',

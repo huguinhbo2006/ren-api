@@ -340,4 +340,134 @@ class ReportController extends BaseController
 
         return $pdf->download("Reporte_{$type}_" . date('Ymd') . ".pdf");
     }
+
+    /**
+     * Reporte Histórico Vitalicio de Rentabilidad y ROI de Activos
+     */
+    public function assetRoi(Request $request): JsonResponse
+    {
+        if ($forbidden = $this->checkAccess($request)) return $forbidden;
+
+        $userId = $request->user()->id;
+
+        $assets = Asset::where('user_id', $userId)
+            ->with(['category'])
+            ->get();
+
+        $items = $assets->map(function ($asset) use ($userId) {
+            // Contratos en los que ha participado el activo
+            $rentals = Rental::where('user_id', $userId)
+                ->where(function ($q) use ($asset) {
+                    $q->where('asset_id', $asset->id)
+                      ->orWhereHas('rentalAssets', function ($rq) use ($asset) {
+                          $rq->where('asset_id', $asset->id);
+                      });
+                })
+                ->where('status', '!=', 'cancelled')
+                ->get();
+
+            $rentalIds = $rentals->pluck('id');
+            $rentalsCount = $rentals->count();
+            $totalDaysRented = (int) $rentals->sum('rental_days');
+
+            // Ingresos generados por los pagos de esas rentas
+            $revenueCents = (int) Payment::whereIn('rental_id', $rentalIds)
+                ->where('type', 'income')
+                ->sum('amount_cents');
+
+            // Egresos y mantenimientos registrados para este activo específico
+            $expenseCents = (int) Expense::where('user_id', $userId)
+                ->where('asset_id', $asset->id)
+                ->sum('amount_cents');
+
+            $netProfitCents = $revenueCents - $expenseCents;
+            $roiMarginPct = $revenueCents > 0 ? round(($netProfitCents / $revenueCents) * 100, 1) : 0;
+
+            return [
+                'id' => $asset->id,
+                'name' => $asset->name,
+                'serial_number' => $asset->serial_number,
+                'category_name' => $asset->category?->name ?? 'General',
+                'status' => $asset->status,
+                'daily_rate_cents' => $asset->daily_rate_cents,
+                'rentals_count' => $rentalsCount,
+                'total_days_rented' => $totalDaysRented,
+                'total_revenue_cents' => $revenueCents,
+                'total_expense_cents' => $expenseCents,
+                'net_profit_cents' => $netProfitCents,
+                'roi_margin_pct' => $roiMarginPct,
+            ];
+        })->sortByDesc('net_profit_cents')->values();
+
+        $totalRevenueCents = (int) $items->sum('total_revenue_cents');
+        $totalExpenseCents = (int) $items->sum('total_expense_cents');
+        $totalNetProfitCents = $totalRevenueCents - $totalExpenseCents;
+
+        return $this->success([
+            'total_assets' => $items->count(),
+            'total_revenue_cents' => $totalRevenueCents,
+            'total_expense_cents' => $totalExpenseCents,
+            'total_net_profit_cents' => $totalNetProfitCents,
+            'items' => $items,
+        ], 'Reporte histórico de ROI de activos generado exitosamente.');
+    }
+
+    /**
+     * Reporte Ranking de Activos Más Solicitados / Demandados
+     */
+    public function assetDemand(Request $request): JsonResponse
+    {
+        if ($forbidden = $this->checkAccess($request)) return $forbidden;
+
+        $userId = $request->user()->id;
+
+        $assets = Asset::where('user_id', $userId)->with(['category'])->get();
+
+        $items = $assets->map(function ($asset) use ($userId) {
+            $rentals = Rental::where('user_id', $userId)
+                ->where(function ($q) use ($asset) {
+                    $q->where('asset_id', $asset->id)
+                      ->orWhereHas('rentalAssets', function ($rq) use ($asset) {
+                          $rq->where('asset_id', $asset->id);
+                      });
+                })
+                ->where('status', '!=', 'cancelled')
+                ->get();
+
+            $rentalsCount = $rentals->count();
+            $daysRented = (int) $rentals->sum('rental_days');
+
+            // Determinar insignia de demanda
+            $demandStatus = 'medium';
+            $demandLabel = 'Demanda Normal';
+            $demandClass = 'bg-info-subtle text-info-emphasis';
+
+            if ($rentalsCount >= 5 || $daysRented >= 30) {
+                $demandStatus = 'high';
+                $demandLabel = '🔥 Alta Demanda (Re-invertir)';
+                $demandClass = 'bg-success-subtle text-success';
+            } elseif ($rentalsCount === 0) {
+                $demandStatus = 'low';
+                $demandLabel = '🧊 Sin Demanda / Estancado';
+                $demandClass = 'bg-secondary-subtle text-secondary';
+            }
+
+            return [
+                'id' => $asset->id,
+                'name' => $asset->name,
+                'serial_number' => $asset->serial_number,
+                'category_name' => $asset->category?->name ?? 'General',
+                'daily_rate_cents' => $asset->daily_rate_cents,
+                'rentals_count' => $rentalsCount,
+                'days_rented' => $daysRented,
+                'demand_status' => $demandStatus,
+                'demand_label' => $demandLabel,
+                'demand_class' => $demandClass,
+            ];
+        })->sortByDesc('rentals_count')->values();
+
+        return $this->success([
+            'items' => $items,
+        ], 'Reporte de demanda de activos generado exitosamente.');
+    }
 }

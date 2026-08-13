@@ -68,7 +68,22 @@ class RentalController extends BaseController
         }
 
         $validated = $request->validated();
-        $asset = Asset::findOrFail($validated['asset_id']);
+        
+        $assetIds = $validated['asset_ids'] ?? (isset($validated['asset_id']) ? [$validated['asset_id']] : []);
+        
+        if (count($assetIds) > 1 && ! PlanHelper::isPro($user)) {
+            return $this->error(
+                'El Plan Gratuito permite solo 1 activo por contrato de renta. Actualiza al Plan Pro para rentar múltiples activos en un solo paquete o combo.',
+                403
+            );
+        }
+
+        $assets = Asset::whereIn('id', $assetIds)->where('user_id', $user->id)->get();
+        if ($assets->isEmpty()) {
+            return $this->error('Debes seleccionar al menos un activo válido para la renta.', 422);
+        }
+
+        $mainAsset = $assets->first();
 
         // Calcular días de renta (mínimo 1 día)
         $startDate = Carbon::parse($validated['start_date'])->startOfDay();
@@ -76,31 +91,47 @@ class RentalController extends BaseController
         $daysDiff  = (int) $startDate->diffInDays($endDate);
         $rentalDays = max(1, $daysDiff);
 
-        // Calcular monto base según tarifas del activo
-        $baseAmountCents = $this->calculateBaseAmount($asset, $rentalDays);
+        // Sumar monto base de todos los activos seleccionados
+        $baseAmountCents = 0;
+        foreach ($assets as $assetItem) {
+            $baseAmountCents += $this->calculateBaseAmount($assetItem, $rentalDays);
+        }
 
-        $depositCents = $validated['deposit_cents'] ?? ($asset->deposit_cents ?? 0);
+        $depositCents = $validated['deposit_cents'] ?? ($mainAsset->deposit_cents ?? 0);
         $discountCents = $validated['discount_cents'] ?? 0;
 
-        return DB::transaction(function () use ($user, $validated, $asset, $startDate, $endDate, $rentalDays, $baseAmountCents, $depositCents, $discountCents) {
+        return DB::transaction(function () use ($user, $validated, $assets, $mainAsset, $startDate, $endDate, $rentalDays, $baseAmountCents, $depositCents, $discountCents) {
             
             // Crear la renta
             $rental = Rental::create([
                 'user_id' => $user->id,
                 'customer_id' => $validated['customer_id'],
-                'asset_id' => $asset->id,
+                'asset_id' => $mainAsset->id,
                 'start_date' => $startDate->toDateString(),
                 'end_date' => $endDate->toDateString(),
                 'rental_days' => $rentalDays,
                 'base_amount_cents' => $baseAmountCents,
                 'deposit_cents' => $depositCents,
                 'discount_cents' => $discountCents,
-                'tax_cents' => 0,
-                'total_amount_cents' => 0, // Se actualizará al sumar extras
+                'total_amount_cents' => 0,
                 'status' => 'active',
                 'payment_status' => 'unpaid',
                 'notes' => $validated['notes'] ?? null,
             ]);
+
+            // Asociar todos los activos a la tabla pivote rental_assets
+            foreach ($assets as $assetItem) {
+                $subtotal = $this->calculateBaseAmount($assetItem, $rentalDays);
+                \App\Models\RentalAsset::create([
+                    'rental_id' => $rental->id,
+                    'asset_id' => $assetItem->id,
+                    'daily_rate_cents' => $assetItem->daily_rate_cents,
+                    'subtotal_cents' => $subtotal,
+                ]);
+
+                // Actualizar estado del activo a 'rented'
+                $assetItem->update(['status' => 'rented']);
+            }
 
             // Procesar servicios extras
             $extrasTotalCents = 0;
@@ -127,10 +158,7 @@ class RentalController extends BaseController
             $totalAmountCents = max(0, $baseAmountCents + $extrasTotalCents + $depositCents - $discountCents);
             $rental->update(['total_amount_cents' => $totalAmountCents]);
 
-            // Actualizar estado del activo a 'rented'
-            $asset->update(['status' => 'rented']);
-
-            $rental->load(['customer', 'asset', 'extras', 'payments']);
+            $rental->load(['customer', 'asset', 'assets', 'extras', 'payments']);
 
             return $this->created(
                 new RentalResource($rental),

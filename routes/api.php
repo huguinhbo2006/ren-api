@@ -127,6 +127,10 @@ Route::prefix('v1')->name('v1.')->group(function () {
                 ->name('accounts-payable');
             Route::get('asset-utilization', [\App\Http\Controllers\Api\V1\ReportController::class, 'assetUtilization'])
                 ->name('asset-utilization');
+            Route::get('asset-roi', [\App\Http\Controllers\Api\V1\ReportController::class, 'assetRoi'])
+                ->name('asset-roi');
+            Route::get('asset-demand', [\App\Http\Controllers\Api\V1\ReportController::class, 'assetDemand'])
+                ->name('asset-demand');
             Route::get('balance', [\App\Http\Controllers\Api\V1\ReportController::class, 'balance'])
                 ->name('balance');
             Route::post('export-pdf', [\App\Http\Controllers\Api\V1\ReportController::class, 'exportPdf'])

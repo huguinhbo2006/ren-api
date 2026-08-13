@@ -21,6 +21,7 @@ class CatalogsSeeder extends Seeder
             ['name' => 'Inmuebles y Locales', 'icon' => 'home-outline', 'color' => '#2563eb', 'description' => 'Casas, departamentos, salones de eventos y oficinas'],
             ['name' => 'Vehículos y Remolques', 'icon' => 'car-outline', 'color' => '#0284c7', 'description' => 'Autos, camionetas, motos y remolques de carga'],
             ['name' => 'Mobiliario y Eventos', 'icon' => 'calendar-outline', 'color' => '#16a34a', 'description' => 'Mesas, sillas, carpas, mantelería e inflables'],
+            ['name' => 'Capital Humano y Personal', 'icon' => 'people-outline', 'color' => '#ec4899', 'description' => 'Meseros, chambelanes, edecanes, choferes y operadores'],
             ['name' => 'Maquinaria y Herramientas', 'icon' => 'construct-outline', 'color' => '#d97706', 'description' => 'Revolvedoras, andamios, taladros y plantas de luz'],
             ['name' => 'Equipo Audiovisual', 'icon' => 'videocam-outline', 'color' => '#7c3aed', 'description' => 'Bocinas, micrófonos, proyectores e iluminación'],
         ];

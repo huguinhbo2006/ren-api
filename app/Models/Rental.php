@@ -89,6 +89,16 @@ class Rental extends Model
         return $this->belongsTo(Asset::class);
     }
 
+    public function rentalAssets(): HasMany
+    {
+        return $this->hasMany(RentalAsset::class);
+    }
+
+    public function assets()
+    {
+        return $this->belongsToMany(Asset::class, 'rental_assets')->withPivot('daily_rate_cents', 'subtotal_cents');
+    }
+
     public function extras(): HasMany
     {
         return $this->hasMany(RentalExtra::class);
