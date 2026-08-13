@@ -97,6 +97,33 @@ class RentalController extends BaseController
             $baseAmountCents += $this->calculateBaseAmount($assetItem, $rentalDays);
         }
 
+        // Validar disponibilidad de fecha para cada activo seleccionado (evitar empalme de contratos)
+        foreach ($assets as $assetItem) {
+            $conflictingRental = Rental::where('user_id', $user->id)
+                ->whereIn('status', ['pending', 'active'])
+                ->where(function ($q) use ($assetItem) {
+                    $q->where('asset_id', $assetItem->id)
+                      ->orWhereHas('rentalAssets', function ($rq) use ($assetItem) {
+                          $rq->where('asset_id', $assetItem->id);
+                      });
+                })
+                ->where(function ($q) use ($startDate, $endDate) {
+                    $q->where('start_date', '<=', $endDate->toDateString())
+                      ->where('end_date', '>=', $startDate->toDateString());
+                })
+                ->first();
+
+            if ($conflictingRental) {
+                $startFmt = Carbon::parse($conflictingRental->start_date)->format('d/m/Y');
+                $endFmt = Carbon::parse($conflictingRental->end_date)->format('d/m/Y');
+
+                return $this->error(
+                    "⚠️ El activo '{$assetItem->name}' ya se encuentra ocupado del {$startFmt} al {$endFmt} bajo el contrato {$conflictingRental->folio}. Por favor selecciona otro rango de fechas o elige un activo distinto.",
+                    422
+                );
+            }
+        }
+
         $depositCents = $validated['deposit_cents'] ?? ($mainAsset->deposit_cents ?? 0);
         $discountCents = $validated['discount_cents'] ?? 0;
 
