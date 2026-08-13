@@ -1,0 +1,26 @@
+name: Deploy API to Hostinger
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy to Hostinger via SSH
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Execute remote deployment commands via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOSTINGER_SSH_HOST }}
+          port: ${{ secrets.HOSTINGER_SSH_PORT }}
+          username: ${{ secrets.HOSTINGER_SSH_USER }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY }}
+          password: ${{ secrets.HOSTINGER_SSH_PASSWORD }}
+          script: |
+            cd ${{ secrets.HOSTINGER_PATH }}
+            git pull origin main
+            chmod +x deploy.sh
+            ./deploy.sh
