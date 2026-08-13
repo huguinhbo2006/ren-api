@@ -29,6 +29,16 @@ Route::prefix('v1')->name('v1.')->group(function () {
             ->name('login');
     });
 
+    // Ruta de verificación de estado (Health check para CI/CD y monitoreo)
+    Route::get('health', function () {
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Rentame API está activa y funcionando en Hostinger',
+            'timestamp' => now()->toIso8601String(),
+            'version' => '1.0.0'
+        ]);
+    })->name('health');
+
     // Planes disponibles (público — para mostrar en landing)
     Route::get('plans', [\App\Http\Controllers\Api\V1\PlanController::class, 'index'])
         ->name('plans.index');
