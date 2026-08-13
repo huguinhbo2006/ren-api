@@ -11,6 +11,12 @@ git pull origin main
 echo "📦 Instalando dependencias de Composer..."
 composer install --no-dev --optimize-autoloader
 
+# Verificar/crear base de datos SQLite si se usa SQLite
+if [ ! -f database/database.sqlite ]; then
+    echo "🗄️ Creando archivo de base de datos SQLite..."
+    touch database/database.sqlite
+fi
+
 # Ejecutar migraciones de base de datos
 echo "🗄️ Ejecutando migraciones de base de datos..."
 php artisan migrate --force
