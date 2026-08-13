@@ -14,16 +14,21 @@ jobs:
       - name: Execute remote deployment commands via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.HOSTINGER_SSH_HOST }}
-          port: ${{ secrets.HOSTINGER_SSH_PORT }}
-          username: ${{ secrets.HOSTINGER_SSH_USER }}
-          key: ${{ secrets.HOSTINGER_SSH_KEY }}
-          password: ${{ secrets.HOSTINGER_SSH_PASSWORD }}
+          host: ${{ secrets.HOSTINGER_SSH_HOST || '195.35.39.62' }}
+          port: ${{ secrets.HOSTINGER_SSH_PORT || '65002' }}
+          username: ${{ secrets.HOSTINGER_SSH_USER || 'u111559603' }}
+          key: ${{ secrets.HOSTINGER_SSH_KEY || secrets.ssh_key || secrets.SSH_KEY }}
+          password: ${{ secrets.HOSTINGER_SSH_PASSWORD || secrets.password || 'Cruzazul29.$' }}
           script: |
-            mkdir -p ${{ secrets.HOSTINGER_PATH }}
-            cd ${{ secrets.HOSTINGER_PATH }}
+            TARGET_PATH="${{ secrets.HOSTINGER_PATH || '/home/u111559603/domains/faceaut.com/public_html/ren_api' }}"
+            # Asegurar compatibilidad con la carpeta ren_api (con guion bajo)
+            if [ "$TARGET_PATH" = "/home/u111559603/domains/faceaut.com/public_html/ren-api" ]; then
+                TARGET_PATH="/home/u111559603/domains/faceaut.com/public_html/ren_api"
+            fi
+            mkdir -p $TARGET_PATH
+            cd $TARGET_PATH
             if [ ! -d ".git" ]; then
-              echo "🚀 Clonando repositorio por primera vez..."
+              echo "🚀 Clonando repositorio por primera vez en ren_api..."
               git clone https://github.com/huguinhbo2006/ren-api.git .
               cp .env.production.example .env
               mkdir -p database
