@@ -1,0 +1,390 @@
+openapi: 3.0.3
+info:
+  title: Rentame API
+  description: API RESTful profesional para la administración de rentas de bienes, inmuebles, vehículos y maquinaria. Soporta modelo Freemium con suscripción Pro, emisión de contratos y recibos en PDF, y control de cobranza.
+  version: 1.0.0
+  contact:
+    name: Soporte Rentame
+    email: soporte@rentame.app
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Servidor Local de Desarrollo
+  - url: https://api.rentame.app/api/v1
+    description: Servidor de Producción
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: Sanctum
+
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Operación realizada exitosamente.
+        data:
+          type: object
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Juan Pérez
+        email:
+          type: string
+          example: juan@rentame.app
+        phone:
+          type: string
+          example: "5512345678"
+        plan_id:
+          type: integer
+          example: 1
+        plan:
+          $ref: '#/components/schemas/Plan'
+
+    Plan:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: Gratuito
+        slug:
+          type: string
+          example: free
+        price_cents:
+          type: integer
+          example: 0
+        max_assets:
+          type: integer
+          example: 3
+        max_customers:
+          type: integer
+          example: 10
+        max_rentals_per_month:
+          type: integer
+          example: 20
+
+    Asset:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 10
+        name:
+          type: string
+          example: Generador Eléctrico 5000W
+        category_id:
+          type: integer
+          example: 2
+        daily_rate_cents:
+          type: integer
+          example: 45000
+        weekly_rate_cents:
+          type: integer
+          example: 250000
+        monthly_rate_cents:
+          type: integer
+          example: 800000
+        deposit_cents:
+          type: integer
+          example: 100000
+        status:
+          type: string
+          enum: [available, rented, maintenance, inactive]
+          example: available
+
+    Customer:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 5
+        name:
+          type: string
+          example: Constructora Gómez SA
+        email:
+          type: string
+          example: contacto@gomez.com
+        phone:
+          type: string
+          example: "5587654321"
+        is_active:
+          type: boolean
+          example: true
+
+    Rental:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        folio:
+          type: string
+          example: RNT-2026-00001
+        customer_id:
+          type: integer
+          example: 5
+        asset_id:
+          type: integer
+          example: 10
+        start_date:
+          type: string
+          format: date
+          example: "2026-08-15"
+        end_date:
+          type: string
+          format: date
+          example: "2026-08-18"
+        rental_days:
+          type: integer
+          example: 3
+        base_amount_cents:
+          type: integer
+          example: 135000
+        deposit_cents:
+          type: integer
+          example: 100000
+        total_amount_cents:
+          type: integer
+          example: 235000
+        status:
+          type: string
+          enum: [active, completed, cancelled]
+          example: active
+        payment_status:
+          type: string
+          enum: [unpaid, partial, paid]
+          example: unpaid
+
+    Payment:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        rental_id:
+          type: integer
+          example: 1
+        amount_cents:
+          type: integer
+          example: 235000
+        payment_date:
+          type: string
+          format: date
+          example: "2026-08-15"
+        method:
+          type: string
+          enum: [cash, transfer, card, check]
+          example: transfer
+        reference:
+          type: string
+          example: SPEI-984920
+
+    Expense:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        category:
+          type: string
+          example: Mantenimiento
+        description:
+          type: string
+          example: Cambio de filtro de aire
+        amount_cents:
+          type: integer
+          example: 35000
+        type:
+          type: string
+          enum: [maintenance, repair, purchase, other]
+          example: maintenance
+
+security:
+  - bearerAuth: []
+
+paths:
+  /auth/register:
+    post:
+      summary: Registro de nuevo usuario
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password, password_confirmation]
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+                password_confirmation: { type: string }
+                plan_id: { type: integer }
+      responses:
+        '201':
+          description: Usuario registrado y token generado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+
+  /auth/login:
+    post:
+      summary: Iniciar sesión
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+      responses:
+        '200':
+          description: Sesión iniciada con éxito
+
+  /dashboard:
+    get:
+      summary: KPIs y métricas operativas del usuario
+      responses:
+        '200':
+          description: Datos del dashboard
+
+  /assets:
+    get:
+      summary: Lista paginada de activos con filtros Spatie
+      parameters:
+        - name: filter[status]
+          in: query
+          schema: { type: string }
+        - name: filter[category_id]
+          in: query
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Lista de activos
+    post:
+      summary: Crear nuevo activo (valida límites de plan)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [name, daily_rate_cents]
+              properties:
+                name: { type: string }
+                daily_rate_cents: { type: integer }
+                photo: { type: string, format: binary }
+      responses:
+        '201':
+          description: Activo creado
+
+  /rentals:
+    get:
+      summary: Lista paginada de contratos de renta
+      responses:
+        '200':
+          description: Lista de rentas
+    post:
+      summary: Generar nuevo contrato de renta
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [customer_id, asset_id, start_date, end_date]
+              properties:
+                customer_id: { type: integer }
+                asset_id: { type: integer }
+                start_date: { type: string, format: date }
+                end_date: { type: string, format: date }
+                deposit_cents: { type: integer }
+                discount_cents: { type: integer }
+      responses:
+        '201':
+          description: Contrato generado
+
+  /rentals/{id}/contract-pdf:
+    get:
+      summary: Descargar contrato de arrendamiento en PDF
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Archivo PDF del contrato
+          content:
+            application/pdf:
+              schema: { type: string, format: binary }
+
+  /payments:
+    get:
+      summary: Lista de cobros e ingresos
+      responses:
+        '200':
+          description: Lista de pagos
+    post:
+      summary: Registrar nuevo cobro
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [rental_id, amount_cents, method]
+              properties:
+                rental_id: { type: integer }
+                amount_cents: { type: integer }
+                method: { type: string, enum: [cash, transfer, card, check] }
+                reference: { type: string }
+      responses:
+        '201':
+          description: Pago registrado y estatus de cobranza recalculado
+
+  /reports/balance:
+    get:
+      summary: Balance general (Ingresos vs Egresos = Utilidad) - Requiere Plan Pro
+      responses:
+        '200':
+          description: Balance financiero
+        '403':
+          description: Requiere Plan Pro
+
+  /plans/subscribe:
+    post:
+      summary: Suscribirse o actualizar a Plan Pro
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [plan_slug]
+              properties:
+                plan_slug: { type: string, example: pro }
+      responses:
+        '200':
+          description: Suscripción actualizada a Pro
