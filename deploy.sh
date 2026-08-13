@@ -26,9 +26,10 @@ fi
 echo "📦 Instalando dependencias de Composer..."
 composer install --no-dev --optimize-autoloader
 
-# 4. Ejecutar migraciones de base de datos
-echo "🗄️ Ejecutando migraciones de base de datos..."
+# 4. Ejecutar migraciones de base de datos y cargar seeders (usuarios y catálogos iniciales)
+echo "🗄️ Ejecutando migraciones y seeders de base de datos..."
 php artisan migrate --force
+php artisan db:seed --force
 
 # 5. Crear enlace simbólico de almacenamiento
 echo "🔗 Verificando enlace simbólico de storage..."
