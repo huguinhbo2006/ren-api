@@ -20,7 +20,16 @@ jobs:
           key: ${{ secrets.HOSTINGER_SSH_KEY }}
           password: ${{ secrets.HOSTINGER_SSH_PASSWORD }}
           script: |
+            mkdir -p ${{ secrets.HOSTINGER_PATH }}
             cd ${{ secrets.HOSTINGER_PATH }}
-            git pull origin main
+            if [ ! -d ".git" ]; then
+              echo "🚀 Clonando repositorio por primera vez..."
+              git clone https://github.com/huguinhbo2006/ren-api.git .
+              cp .env.production.example .env
+              php artisan key:generate --force
+            else
+              echo "🔄 Actualizando repositorio existente..."
+              git pull origin main
+            fi
             chmod +x deploy.sh
             ./deploy.sh
