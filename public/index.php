@@ -5,12 +5,11 @@ use Illuminate\Http\Request;
 
 define('LARAVEL_START', microtime(true));
 
-// Forzar encabezados CORS globales para cualquier origen en Hostinger
-$origin = $_SERVER['HTTP_ORIGIN'] ?? '*';
-header("Access-Control-Allow-Origin: {$origin}");
+// Forzar encabezados CORS globales para Hostinger CDN (hcdn)
+header("Access-Control-Allow-Origin: *");
 header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, X-XSRF-TOKEN, Accept, Origin");
-header("Access-Control-Allow-Credentials: true");
+header("Access-Control-Max-Age: 86400");
 
 // Interceptar peticiones OPTIONS (CORS preflight) incondicionalmente
 if (isset($_SERVER['REQUEST_METHOD']) && $_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
