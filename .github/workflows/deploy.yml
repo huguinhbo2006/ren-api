@@ -26,10 +26,14 @@ jobs:
               echo "🚀 Clonando repositorio por primera vez..."
               git clone https://github.com/huguinhbo2006/ren-api.git .
               cp .env.production.example .env
+              mkdir -p database
+              touch database/database.sqlite
               php artisan key:generate --force
             else
               echo "🔄 Actualizando repositorio existente..."
               git pull origin main
+              mkdir -p database
+              touch database/database.sqlite
             fi
             chmod +x deploy.sh
             ./deploy.sh
