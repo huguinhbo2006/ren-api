@@ -18,7 +18,7 @@ class UserSeeder extends Seeder
         $proPlan  = Plan::where('slug', 'pro')->first();
 
         // 1. Super Admin
-        $admin = User::firstOrCreate(
+        $admin = User::updateOrCreate(
             ['email' => 'admin@rentame.mx'],
             [
                 'name' => 'Administrador Rentame',
@@ -32,7 +32,7 @@ class UserSeeder extends Seeder
         $admin->assignRole('admin');
 
         // 2. Demo User (Plan Free)
-        $freeUser = User::firstOrCreate(
+        $freeUser = User::updateOrCreate(
             ['email' => 'demo@rentame.mx'],
             [
                 'name' => 'Usuario Demo Free',
@@ -46,7 +46,7 @@ class UserSeeder extends Seeder
         $freeUser->assignRole('user');
 
         // 3. Pro User (Plan Pro)
-        $proUser = User::firstOrCreate(
+        $proUser = User::updateOrCreate(
             ['email' => 'pro@rentame.mx'],
             [
                 'name' => 'Empresa Rentas Pro',
