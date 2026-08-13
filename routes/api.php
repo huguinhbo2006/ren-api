@@ -107,7 +107,8 @@ Route::prefix('v1')->name('v1.')->group(function () {
         Route::get('payments/{payment}/receipt-pdf', [\App\Http\Controllers\Api\V1\PaymentController::class, 'receiptPdf'])
             ->name('payments.receipt');
 
-        // Egresos / Mantenimientos
+        // Egresos / Mantenimientos / Categorías de gasto
+        Route::apiResource('expense-categories', \App\Http\Controllers\Api\V1\ExpenseCategoryController::class);
         Route::apiResource('expenses', \App\Http\Controllers\Api\V1\ExpenseController::class);
         Route::post('expenses/{expense}/receipt', [\App\Http\Controllers\Api\V1\ExpenseController::class, 'uploadReceipt'])
             ->name('expenses.receipt');

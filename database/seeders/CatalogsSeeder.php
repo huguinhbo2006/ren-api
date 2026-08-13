@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\AssetCategory;
+use App\Models\ExpenseCategory;
 use App\Models\ExtraService;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -30,6 +31,17 @@ class CatalogsSeeder extends Seeder
             ['name' => 'Instalación y Puesta en Marcha', 'description' => 'Montaje profesional por personal técnico', 'price_cents' => 45000, 'unit' => 'por servicio'],
         ];
 
+        $defaultExpenseCategories = [
+            ['name' => 'Mantenimiento Preventivo', 'icon' => 'bi-tools', 'color' => '#2563eb', 'description' => 'Servicios programados y afinaciones'],
+            ['name' => 'Reparación Mecánica / Correctiva', 'icon' => 'bi-wrench-adjustable', 'color' => '#dc2626', 'description' => 'Reparaciones por fallas o desperfectos'],
+            ['name' => 'Combustible / Gasolina', 'icon' => 'bi-fuel-pump', 'color' => '#d97706', 'description' => 'Cargas de gasolina o diésel'],
+            ['name' => 'Seguros y Licencias', 'icon' => 'bi-shield-check', 'color' => '#16a34a', 'description' => 'Pólizas de seguro, tenencias y refrendos'],
+            ['name' => 'Compra de Refacciones', 'icon' => 'bi-gear', 'color' => '#7c3aed', 'description' => 'Refacciones, consumibles y piezas de repuesto'],
+            ['name' => 'Limpieza y Lavado', 'icon' => 'bi-droplet', 'color' => '#0284c7', 'description' => 'Lavado de vehículos o sanitización de equipos'],
+            ['name' => 'Impuestos / Trámites', 'icon' => 'bi-receipt', 'color' => '#4b5563', 'description' => 'Pagos de derechos, contabilidad e impuestos'],
+            ['name' => 'Gastos Administrativos', 'icon' => 'bi-building', 'color' => '#64748b', 'description' => 'Servicios, papelería y gastos generales de oficina'],
+        ];
+
         foreach ($users as $user) {
             foreach ($defaultCategories as $cat) {
                 AssetCategory::firstOrCreate(
@@ -42,6 +54,13 @@ class CatalogsSeeder extends Seeder
                 ExtraService::firstOrCreate(
                     ['user_id' => $user->id, 'name' => $svc['name']],
                     array_merge($svc, ['user_id' => $user->id, 'is_active' => true])
+                );
+            }
+
+            foreach ($defaultExpenseCategories as $expCat) {
+                ExpenseCategory::firstOrCreate(
+                    ['user_id' => $user->id, 'name' => $expCat['name']],
+                    array_merge($expCat, ['user_id' => $user->id])
                 );
             }
         }
