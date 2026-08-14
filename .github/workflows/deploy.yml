@@ -20,23 +20,22 @@ jobs:
           key: ${{ secrets.HOSTINGER_SSH_KEY || secrets.ssh_key || secrets.SSH_KEY }}
           password: ${{ secrets.HOSTINGER_SSH_PASSWORD || secrets.password || 'Cruzazul29.$' }}
           script: |
-            for TARGET_PATH in "/home/u111559603/domains/faceaut.com/public_html/ren_api" "/home/u111559603/domains/faceaut.com/public_html/ren-api"; do
-              echo "🚀 Desplegando en $TARGET_PATH..."
-              mkdir -p $TARGET_PATH
-              cd $TARGET_PATH
-              if [ ! -d ".git" ]; then
-                git clone https://github.com/huguinhbo2006/ren-api.git .
-                cp .env.production.example .env
-                mkdir -p database
-                touch database/database.sqlite
-                php artisan key:generate --force
-              else
-                git checkout -- . || true
-                git fetch origin main
-                git reset --hard origin/main
-                mkdir -p database
-                touch database/database.sqlite
-              fi
-              chmod +x deploy.sh
-              ./deploy.sh
-            done
+            TARGET_PATH="/home/u111559603/domains/faceaut.com/public_html/ren-api"
+            echo "🚀 Desplegando en $TARGET_PATH..."
+            mkdir -p $TARGET_PATH
+            cd $TARGET_PATH
+            if [ ! -d ".git" ]; then
+              git clone https://github.com/huguinhbo2006/ren-api.git .
+              cp .env.production.example .env
+              mkdir -p database
+              touch database/database.sqlite
+              php artisan key:generate --force
+            else
+              git checkout -- . || true
+              git fetch origin main
+              git reset --hard origin/main
+              mkdir -p database
+              touch database/database.sqlite
+            fi
+            chmod +x deploy.sh
+            ./deploy.sh
