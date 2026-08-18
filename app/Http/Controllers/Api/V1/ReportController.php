@@ -380,8 +380,18 @@ class ReportController extends BaseController
                 ->where('asset_id', $asset->id)
                 ->sum('amount_cents');
 
-            $netProfitCents = $revenueCents - $expenseCents;
-            $roiMarginPct = $revenueCents > 0 ? round(($netProfitCents / $revenueCents) * 100, 1) : 0;
+            $initialInvestmentCents = (int) ($asset->initial_investment_cents ?? 0);
+            $totalInvestmentCents = $initialInvestmentCents + $expenseCents;
+            $netProfitCents = $revenueCents - $totalInvestmentCents;
+            $remainingToRecoverCents = max(0, $totalInvestmentCents - $revenueCents);
+
+            // Si hay inversión total (inicial + egresos), calcular ROI % sobre esa inversión total.
+            // Si inversión total es 0 y hubo ingresos, ROI es 100%.
+            if ($totalInvestmentCents > 0) {
+                $roiMarginPct = round(($netProfitCents / $totalInvestmentCents) * 100, 1);
+            } else {
+                $roiMarginPct = $revenueCents > 0 ? 100.0 : 0.0;
+            }
 
             return [
                 'id' => $asset->id,
@@ -390,24 +400,33 @@ class ReportController extends BaseController
                 'category_name' => $asset->category?->name ?? 'General',
                 'status' => $asset->status,
                 'daily_rate_cents' => $asset->daily_rate_cents,
+                'initial_investment_cents' => $initialInvestmentCents,
                 'rentals_count' => $rentalsCount,
                 'total_days_rented' => $totalDaysRented,
                 'total_revenue_cents' => $revenueCents,
                 'total_expense_cents' => $expenseCents,
+                'total_investment_cents' => $totalInvestmentCents,
                 'net_profit_cents' => $netProfitCents,
+                'remaining_to_recover_cents' => $remainingToRecoverCents,
                 'roi_margin_pct' => $roiMarginPct,
             ];
         })->sortByDesc('net_profit_cents')->values();
 
-        $totalRevenueCents = (int) $items->sum('total_revenue_cents');
+        $totalInitialInvestmentCents = (int) $items->sum('initial_investment_cents');
         $totalExpenseCents = (int) $items->sum('total_expense_cents');
-        $totalNetProfitCents = $totalRevenueCents - $totalExpenseCents;
+        $totalInvestmentCents = (int) $items->sum('total_investment_cents');
+        $totalRevenueCents = (int) $items->sum('total_revenue_cents');
+        $totalNetProfitCents = $totalRevenueCents - $totalInvestmentCents;
+        $totalRemainingToRecoverCents = (int) $items->sum('remaining_to_recover_cents');
 
         return $this->success([
             'total_assets' => $items->count(),
-            'total_revenue_cents' => $totalRevenueCents,
+            'total_initial_investment_cents' => $totalInitialInvestmentCents,
             'total_expense_cents' => $totalExpenseCents,
+            'total_investment_cents' => $totalInvestmentCents,
+            'total_revenue_cents' => $totalRevenueCents,
             'total_net_profit_cents' => $totalNetProfitCents,
+            'total_remaining_to_recover_cents' => $totalRemainingToRecoverCents,
             'items' => $items,
         ], 'Reporte histórico de ROI de activos generado exitosamente.');
     }

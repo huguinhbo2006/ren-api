@@ -28,6 +28,7 @@ class StoreAssetRequest extends FormRequest
             'weekly_rate_cents' => ['nullable', 'integer', 'min:0'],
             'monthly_rate_cents' => ['nullable', 'integer', 'min:0'],
             'deposit_cents' => ['nullable', 'integer', 'min:0'],
+            'initial_investment_cents' => ['nullable', 'integer', 'min:0'],
             'status' => ['nullable', Rule::in(['available', 'rented', 'maintenance', 'inactive'])],
             'location' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string'],

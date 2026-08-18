@@ -29,6 +29,7 @@ class AssetResource extends JsonResource
             'weekly_rate_cents' => $this->weekly_rate_cents,
             'monthly_rate_cents' => $this->monthly_rate_cents,
             'deposit_cents' => $this->deposit_cents,
+            'initial_investment_cents' => $this->initial_investment_cents ?? 0,
             'status' => $this->status,
             'location' => $this->location,
             'notes' => $this->notes,

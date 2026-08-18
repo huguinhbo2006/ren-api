@@ -22,6 +22,7 @@ class Asset extends Model
         'weekly_rate_cents',
         'monthly_rate_cents',
         'deposit_cents',
+        'initial_investment_cents',
         'status',
         'location',
         'notes',
@@ -34,6 +35,7 @@ class Asset extends Model
         'weekly_rate_cents' => 'integer',
         'monthly_rate_cents' => 'integer',
         'deposit_cents' => 'integer',
+        'initial_investment_cents' => 'integer',
     ];
 
     /**

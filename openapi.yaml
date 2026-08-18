@@ -103,6 +103,9 @@ components:
         deposit_cents:
           type: integer
           example: 100000
+        initial_investment_cents:
+          type: integer
+          example: 5000000
         status:
           type: string
           enum: [available, rented, maintenance, inactive]
